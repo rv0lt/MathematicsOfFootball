@@ -2,10 +2,10 @@
 import pandas as pd
 import numpy as np
 import json
+import os
 
 #Plotting
 import matplotlib.pyplot as plt
-import FCPython 
 
 #Statistical fitting of models
 import statsmodels.api as sm
@@ -15,12 +15,12 @@ import statsmodels.formula.api as smf
 
 #filter all the events done by a set of players given
 def filterEventsByPlayers(eventsDf,playersDF):
-    eventsDefenders = pd.DataFrame()
+    eventsFilter = pd.DataFrame()
     for i,player in playersDF.iterrows():
         playerId = player['wyId']
         aux = eventsDf[eventsDf["playerId"] == playerId]
-        eventsDefenders = eventsDefenders.append(aux)
-    return eventsDefenders
+        eventsFilter = eventsFilter.append(aux)
+    return eventsFilter
 
 
 def createChainId(eventsDf):
@@ -45,6 +45,7 @@ def createChainId(eventsDf):
     eventsDf.start = eventsDf.start.shift(1, fill_value=eventsDf.index.min())
 
     #when using iterrows we shouldnt modify the object, so we create a copy
+
 
     for i,row in eventsDf.iterrows():
         aux = eventsDf.loc[row.start : i, ['teamId']]
@@ -245,10 +246,20 @@ metricsDf = getMetrics(eventsDFWithChain,interceptionsDf)
 
 #create plots
 print("-------------------------\n CREATING PLOT\n-------------------------\n")
+
+#get median values for the axis
+xg_median = metricsDf[metricsDf["xg"] > 0]["xg"].median()
+interceptions_median = metricsDf[metricsDf["interceptions"] > 0]["interceptions"].median()
+
 ax = metricsDf.plot.scatter(x="xg", y="interceptions")
-ax.axvline(x=1.5,ymin=0, ymax=1, color="red")
-ax.axhline(y=125, xmin=0, xmax=1, color="red")
-plt.show()
+ax.axvline(x=xg_median,ymin=0, ymax=1, color="red")
+ax.axhline(y=interceptions_median, xmin=0, xmax=1, color="red")
+ax.title.set_text("Premier League xgChain and Interceptions Plot")
+
+cwd = os.getcwd()
+path = cwd + "/Output/PremierLeagueXgInterceptionsMetric.png"
+ax.get_figure().savefig(path)
+print("Plot saved in the directory:{0}".format(path))
 
 listOfPlayers = generateListOfPlayers(metricsDf,1.5,125,10)
 print("-------------------------\n LIST OF THE 10 BEST PLAYERS\n-------------------------\n")
